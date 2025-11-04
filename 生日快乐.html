@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>生日快乐，琳子 🎆</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at bottom, #000010, #000);
+      height: 100%;
+      color: white;
+      text-align: center;
+      font-family: 'Microsoft YaHei', sans-serif;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      top: 40%;
+      transform: translateY(-50%);
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 3em;
+      letter-spacing: 4px;
+      text-shadow: 0 0 15px #ff88ff, 0 0 30px #ffccff;
+      opacity: 0;
+      animation: appear 2s ease-in-out 1.5s forwards, glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes appear {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 10px #ff88ff; }
+      to { text-shadow: 0 0 25px #ffccff, 0 0 50px #fff; }
+    }
+
+    #blessings {
+      margin-top: 30px;
+      font-size: 1.5em;
+      text-shadow: 0 0 20px #ff99ff, 0 0 40px #fff;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    .music {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      z-index: 10;
+    }
+
+    .music button {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid #fff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      color: #fff;
+      font-size: 1.2em;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: all 0.3s ease;
+    }
+
+    .music button:hover {
+      background: rgba(255,255,255,0.3);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="fireworks"></canvas>
+
+  <div class="content">
+    <h1>生日快乐，琳子 🎂</h1>
+    <p id="blessings"></p>
+  </div>
+
+  <div class="music">
+    <button id="musicBtn">🎵</button>
+  </div>
+
+  <audio id="bgm" loop>
+    <source src="https://music.163.com/song/media/outer/url?id=1363948882.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    // 烟花动画
+    const canvas = document.getElementById('fireworks');
+    const ctx = canvas.getContext('2d');
+    let w, h;
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const particles = [];
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function createFirework(x, y, color) {
+      const count = 70;
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2;
+        const speed = random(2, 6);
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          alpha: 1,
+          color
+        });
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = "rgba(0,0,0,0.2)";
+      ctx.fillRect(0, 0, w, h);
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.03;
+        p.alpha -= 0.01;
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+          i--;
+          continue;
+        }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = p.color.replace('70%', `${p.alpha * 100}%`);
+        ctx.fill();
+      }
+      if (Math.random() < 0.04) {
+        createFirework(random(w*0.2, w*0.8), random(h*0.2, h*0.5), `hsl(${Math.floor(random(0,360))}, 100%, 70%)`);
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+
+    // 多条祝福语依次闪现
+    const messages = [
+      "祝你在新的一年",
+      "开心",
+      "快乐",
+      "健康",
+      "暴富",
+      "上岸",
+      "越来越漂亮",
+      "幸福每一天"
+    ];
+
+    const blessings = document.getElementById('blessings');
+    let idx = 0;
+
+    function showBlessing() {
+      if (idx >= messages.length) return;
+      blessings.textContent = messages[idx];
+      blessings.style.opacity = 1;
+
+      // 同步触发烟花
+      createFirework(random(w*0.3, w*0.7), random(h*0.2, h*0.6), `hsl(${Math.floor(random(0,360))},100%,70%)`);
+
+      setTimeout(() => {
+        blessings.style.opacity = 0;
+        idx++;
+        setTimeout(showBlessing, 1000);
+      }, 2000);
+    }
+
+    setTimeout(showBlessing, 3000); // 延迟等待主标题出现
+
+    // 音乐控制
+    const bgm = document.getElementById('bgm');
+    const btn = document.getElementById('musicBtn');
+    let playing = false;
+    btn.addEventListener('click', () => {
+      if (!playing) {
+        bgm.play();
+        btn.textContent = '⏸️';
+      } else {
+        bgm.pause();
+        btn.textContent = '🎵';
+      }
+      playing = !playing;
+    });
+
+// 尝试在加载时播放音乐（可能被阻止）
+window.addEventListener('load', () => {
+  const tryPlay = () => {
+    bgm.play().then(() => {
+      playing = true;
+      btn.textContent = '⏸️';
+      document.removeEventListener('touchstart', tryPlay);
+      document.removeEventListener('click', tryPlay);
+    }).catch(() => {
+      // 等待第一次点击再播放
+      document.addEventListener('touchstart', tryPlay, { once: true });
+      document.addEventListener('click', tryPlay, { once: true });
+    });
+  };
+  tryPlay();
+});
+
+  </script>
+</body>
+</html>
